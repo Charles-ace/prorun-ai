@@ -7,16 +7,13 @@ import {
   ArrowRight,
   BrainCircuit,
   LineChart,
-  Lock,
   ScrollText,
   ShieldCheck,
   Sparkles,
-  TrendingUp,
-  Wallet,
   Zap,
 } from "lucide-react";
 import { Logo } from "@/components/dashboard/sidebar";
-import { RiskGauge } from "@/components/ui/risk-gauge";
+import { SplineScene } from "@/components/spline/spline-scene";
 import { WalletConnectButton } from "@/components/wallet/wallet-connect";
 
 const features = [
@@ -85,43 +82,43 @@ export default function LandingPage() {
       </header>
 
       {/* hero */}
-      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-14 lg:pt-20">
-        <div className="grid items-center gap-14 lg:grid-cols-2">
-          <div>
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1.5 text-xs font-medium text-emerald-300"
-            >
-              <Sparkles size={13} />
-              AI-powered crypto risk intelligence
-            </motion.div>
+      <section className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-12 lg:pt-16">
+        <div className="grid items-center gap-10 lg:grid-cols-[45fr_55fr]">
+          {/* Spline scene — first in DOM so it sits above the headline on mobile */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: [0.21, 0.47, 0.32, 0.98] }}
+            className="relative h-[320px] sm:h-[400px] lg:col-start-2 lg:row-start-1 lg:h-[560px]"
+          >
+            <SplineScene variant="hero" interactive className="h-full w-full" />
+          </motion.div>
 
+          <div className="lg:col-start-1 lg:row-start-1">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.08 }}
-              className="mt-5 text-4xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-6xl"
+              transition={{ duration: 0.7 }}
+              className="text-4xl font-extrabold leading-[1.05] tracking-tight text-ink sm:text-5xl lg:text-6xl"
             >
-              Understand your crypto risk{" "}
-              <span className="txt-gradient text-shadow-glow">before the market does.</span>
+              AI That Understands Your{" "}
+              <span className="txt-gradient text-shadow-glow">Crypto Risk</span>
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.16 }}
-              className="mt-5 max-w-lg text-lg text-ink-muted"
+              transition={{ duration: 0.7, delay: 0.1 }}
+              className="mt-5 max-w-xl text-base text-ink-muted sm:text-lg"
             >
-              AI-powered portfolio analysis and trading intelligence. Get a quantified
-              risk score, market briefs, and a personal analyst that knows your positions.
+              Analyze your portfolio, uncover hidden risks, and receive AI-powered market
+              intelligence before making your next trade.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.24 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
               className="mt-8 flex flex-wrap items-center gap-3"
             >
               <Link
@@ -132,28 +129,39 @@ export default function LandingPage() {
                 <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
-                href="/dashboard/assistant"
+                href="/dashboard"
                 className="flex items-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-6 py-3.5 text-sm font-semibold text-ink backdrop-blur transition hover:border-emerald-400/30 hover:text-emerald-300"
               >
-                <BrainCircuit size={16} />
-                Try AI Assistant
+                View Demo
               </Link>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.7, delay: 0.34 }}
-              className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-ink-faint"
+              transition={{ duration: 0.7, delay: 0.3 }}
+              className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-ink-muted"
             >
-              <span className="flex items-center gap-1.5"><ShieldCheck size={14} className="text-emerald-400" /> No account required</span>
-              <span className="flex items-center gap-1.5"><Lock size={14} className="text-emerald-400" /> Read-only analysis</span>
-              <span className="flex items-center gap-1.5"><TrendingUp size={14} className="text-emerald-400" /> Live market pricing</span>
+              <span className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
+                  <ShieldCheck size={14} />
+                </span>
+                AI Risk Engine
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-400/10 text-cyan-300">
+                  <Activity size={14} />
+                </span>
+                Portfolio Intelligence
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-lime-400/10 text-lime-300">
+                  <BrainCircuit size={14} />
+                </span>
+                Real-Time Analytics
+              </span>
             </motion.div>
           </div>
-
-          {/* mock dashboard */}
-          <HeroPreview />
         </div>
       </section>
 
@@ -294,61 +302,6 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
-  );
-}
-
-function HeroPreview() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 40, rotate: 1 }}
-      animate={{ opacity: 1, y: 0, rotate: 0 }}
-      transition={{ duration: 0.9, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
-      className="relative mx-auto w-full max-w-md lg:max-w-none"
-    >
-      <div className="absolute -inset-4 rounded-3xl bg-gradient-to-tr from-emerald-500/20 to-lime-400/10 blur-2xl" />
-      <div className="glass animate-float relative p-5">
-        <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-rose-400/70" />
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400/70" />
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400/70" />
-          </div>
-          <span className="rounded-md bg-emerald-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
-            Prorun Dashboard
-          </span>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="glass p-4">
-            <p className="text-[10px] uppercase tracking-wider text-ink-faint">Portfolio Value</p>
-            <p className="tabular mt-1 text-lg font-bold text-ink">$48,230</p>
-            <p className="tabular text-[11px] text-emerald-300">+6.4% 24h</p>
-          </div>
-          <div className="glass flex flex-col items-center justify-center p-2">
-            <RiskGauge value={72} size={104} />
-          </div>
-        </div>
-        <div className="mt-3 space-y-2 rounded-xl border border-rose-400/20 bg-rose-400/[0.07] p-4">
-          <p className="flex items-center gap-2 text-xs font-semibold text-rose-300">
-            <Activity size={14} /> Main risk detected
-          </p>
-          <p className="text-xs text-ink-muted">
-            58% ETH-related exposure · only 5% stable protection. High concentration risk.
-          </p>
-        </div>
-        <div className="mt-3 flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-          <BrainCircuit size={16} className="text-emerald-300" />
-          <p className="text-[11px] text-ink-muted">
-            <span className="text-ink">AI:</span> Reduce concentrated positions & rebuild liquidity before volatility returns.
-          </p>
-        </div>
-      </div>
-      <div className="glass animate-float absolute -right-4 -top-6 hidden p-3 sm:block" style={{ animationDelay: "1.2s" }}>
-        <div className="flex items-center gap-2 text-xs">
-          <Wallet size={14} className="text-emerald-300" />
-          <span className="text-ink-muted">Wallet synced</span>
-        </div>
-      </div>
-    </motion.div>
   );
 }
 

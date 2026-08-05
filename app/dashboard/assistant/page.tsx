@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { BrainCircuit, CornerDownLeft, Sparkles, Wallet } from "lucide-react";
 import { usePortfolio } from "@/components/providers/portfolio-provider";
 import { GlassCard } from "@/components/ui/glass-card";
 import { PortfolioGate } from "@/components/dashboard/portfolio-gate";
+import { SplineScene } from "@/components/spline/spline-scene";
 import { cn } from "@/lib/format";
 import type { ChatMessage } from "@/lib/types";
 
@@ -63,7 +64,26 @@ export default function AssistantPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
-        <GlassCard className="flex h-[calc(100vh-220px)] min-h-[480px] flex-col overflow-hidden p-0">
+        <div className="space-y-4">
+          <AnimatePresence initial={false}>
+            <motion.div
+              key="spline-processing"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{
+                opacity: thinking ? 1 : 0.3,
+                height: thinking ? 168 : 72,
+              }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="overflow-hidden"
+            >
+              <div className="relative h-full w-full overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+                <SplineScene variant="thinking" processing={thinking} className="h-full w-full" />
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          <GlassCard className="flex h-[calc(100vh-220px)] min-h-[480px] flex-col overflow-hidden p-0">
           <div className="flex items-center gap-2 border-b border-white/[0.06] px-5 py-3.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400/25 to-lime-400/10 text-emerald-300">
               <BrainCircuit size={16} />
@@ -138,6 +158,7 @@ export default function AssistantPage() {
             </p>
           </div>
         </GlassCard>
+        </div>
 
         <div className="space-y-4">
           <GlassCard>

@@ -13,7 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Logo } from "@/components/dashboard/sidebar";
-import { SplineScene } from "@/components/spline/spline-scene";
+import { LivePreview } from "@/components/hero/live-preview";
 import { WalletConnectButton } from "@/components/wallet/wallet-connect";
 
 const features = [
@@ -84,16 +84,6 @@ export default function LandingPage() {
       {/* hero */}
       <section className="relative z-10 mx-auto max-w-7xl px-6 pb-24 pt-12 lg:pt-16">
         <div className="grid items-center gap-10 lg:grid-cols-[45fr_55fr]">
-          {/* Spline scene — first in DOM so it sits above the headline on mobile */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, ease: [0.21, 0.47, 0.32, 0.98] }}
-            className="relative h-[320px] sm:h-[400px] lg:col-start-2 lg:row-start-1 lg:h-[560px]"
-          >
-            <SplineScene variant="hero" interactive className="h-full w-full" />
-          </motion.div>
-
           <div className="lg:col-start-1 lg:row-start-1">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
@@ -161,6 +151,11 @@ export default function LandingPage() {
                 Real-Time Analytics
               </span>
             </motion.div>
+          </div>
+
+          {/* live product preview */}
+          <div className="lg:col-start-2 lg:row-start-1">
+            <LivePreview />
           </div>
         </div>
       </section>

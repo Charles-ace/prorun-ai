@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Sidebar, Topbar } from "@/components/dashboard/sidebar";
-import { DashboardLoadingGate } from "@/components/spline/loading-screen";
-import { SplineScene } from "@/components/spline/spline-scene";
+import { DashboardLoadingGate } from "@/components/loading/loading-screen";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,10 +10,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-[#07090D] text-ink">
-      {/* decorative Spline scene behind the dashboard cards */}
-      <div className="pointer-events-none fixed inset-0 z-0 opacity-[0.16] blur-[3px]">
-        <SplineScene variant="ambient" className="h-full w-full" />
-      </div>
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute -top-40 right-[-10%] h-[420px] w-[520px] rounded-full bg-emerald-500/[0.06] blur-[120px]" />
         <div className="absolute bottom-[-20%] left-[-5%] h-[380px] w-[480px] rounded-full bg-lime-400/[0.04] blur-[120px]" />

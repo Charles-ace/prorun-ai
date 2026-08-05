@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Logo } from "@/components/dashboard/sidebar";
-import { SplineScene } from "@/components/spline/spline-scene";
 import { cn } from "@/lib/format";
 
 const STEPS = [
@@ -52,8 +51,22 @@ export function LoadingOverlay({ onDone }: { onDone: () => void }) {
         <Logo />
       </motion.div>
 
-      <div className="relative mt-6 h-44 w-full max-w-md sm:h-52">
-        <SplineScene variant="thinking" className="h-full w-full" />
+      {/* brand orb — spins while the engines boot */}
+      <div className="relative mt-10 flex h-32 w-full max-w-md items-center justify-center">
+        <motion.div
+          className="relative h-20 w-20"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        >
+          <div className="absolute inset-0 rounded-full border border-white/[0.08]" />
+          <div className="absolute inset-2 rounded-full border-t-2 border-cyan-400/70" />
+          <div className="absolute inset-0 rounded-full border-b-2 border-emerald-400/50" />
+        </motion.div>
+        <motion.div
+          className="absolute h-2.5 w-2.5 rounded-full bg-cyan-300 shadow-[0_0_18px_4px_rgba(0,229,255,0.45)]"
+          animate={{ scale: [1, 1.7, 1], opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+        />
       </div>
 
       <div className="mt-2 w-full max-w-sm space-y-2.5">

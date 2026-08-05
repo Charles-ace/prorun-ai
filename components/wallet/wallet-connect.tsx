@@ -87,7 +87,6 @@ export function WalletConnectButton({ variant = "default" }: { variant?: "defaul
         }
         const r = await fetchSolanaHoldings(address);
         w = { address, chain: r.chain, chainId: r.chainId, providerId, connectedAt: new Date().toISOString(), holdings: r.holdings };
-        if (!Object.keys(w.holdings).length) throw new Error("No priceable balances found on this wallet.");
       } else {
         const provider = getEVMProvider(providerId);
         if (!provider) throw new Error(`${WALLET_PROVIDERS.find((p) => p.id === providerId)?.name} is not installed.`);
@@ -106,15 +105,16 @@ export function WalletConnectButton({ variant = "default" }: { variant?: "defaul
         }
         const r = await fetchEVMHoldings(provider, address);
         w = { address, chain: r.chain, chainId: r.chainId, providerId, connectedAt: new Date().toISOString(), holdings: r.holdings };
-        if (!Object.keys(w.holdings).length) throw new Error("No priceable balances found on this wallet.");
       }
 
       setWallet(w);
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(w));
       setOpen(false);
       await applyPortfolio(w);
-      router.push("/dashboard");
+      // Connected, but nothing priceable was found — send them to add assets manually.
+      router.push(Object.keys(w.holdings).length ? "/dashboard" : "/dashboard/portfolio");
     } catch (err: any) {
+      console.error("Prorun wallet connect failed:", err);
       setError(err?.message ?? "Connection failed — please try again.");
     } finally {
       setConnecting(null);
@@ -177,7 +177,11 @@ export function WalletConnectButton({ variant = "default" }: { variant?: "defaul
         </div>
       ) : (
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            // Re-scan for wallets that injected late (extension just loaded).
+            setProviders(detectProviders());
+            setOpen(true);
+          }}
           className={cn(
             "flex items-center gap-2 rounded-xl text-sm font-bold transition",
             variant === "ghost"
@@ -275,6 +279,9 @@ function ConnectPanel({
         <p className="flex items-center gap-1.5 text-[10px] text-ink-faint">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           On-chain read via your wallet — no API keys, no custody of funds
+        </p>
+        <p className="mt-1 text-[10px] text-ink-faint">
+          Tip: on the OKX mobile app? Open this site in the in-app browser, or use a desktop extension.
         </p>
         {error && <p className="mt-1 text-[11px] text-rose-400">{error}</p>}
       </div>

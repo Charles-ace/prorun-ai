@@ -9,7 +9,7 @@
 // WOKB / USDC / USDT are indexed and OKX Wallet connects straight onto X Layer.
 import { ASSET_MAP } from "@/lib/market-data";
 
-export type WalletProviderId = "metamask" | "coinbase" | "okx" | "phantom" | "demo";
+export type WalletProviderId = "metamask" | "coinbase" | "okx" | "generic" | "phantom" | "demo";
 
 export interface WalletProviderMeta {
   id: WalletProviderId;
@@ -42,6 +42,7 @@ export const WALLET_PROVIDERS: WalletProviderMeta[] = [
   { id: "metamask", name: "MetaMask", type: "EVM", detail: "Injected provider", color: "#f6851b" },
   { id: "coinbase", name: "Coinbase Wallet", type: "EVM", detail: "Browser extension", color: "#1652f0" },
   { id: "okx", name: "OKX Wallet", type: "EVM", detail: "Connects on X Layer · OKB · chain 196", color: "#17b90f" },
+  { id: "generic", name: "Any EVM Wallet", type: "EVM", detail: "window.ethereum — Rabby, Trust, Brave, etc.", color: "#a78bfa" },
   { id: "phantom", name: "Phantom", type: "Solana", detail: "Solana browser wallet", color: "#9945ff" },
   { id: "demo", name: "Demo Wallet", type: "Demo", detail: "Simulated — no wallet needed", color: "#34d399" },
 ];
@@ -81,6 +82,8 @@ function providerList(): EIP1193Provider[] {
 export function detectProviders(): AvailableProvider[] {
   const w = windowOrNull();
   const list = providerList();
+  // Any injected ethereum object means an EVM wallet is present.
+  const hasEVM = list.length > 0 || !!w?.ethereum;
   const metamask = list.find((p) => p.isMetaMask) ?? null;
   const coinbase =
     (w?.coinbaseWalletExtension as EIP1193Provider | undefined) ?? list.find((p) => p.isCoinbaseWallet) ?? null;
@@ -92,10 +95,13 @@ export function detectProviders(): AvailableProvider[] {
 
   return WALLET_PROVIDERS.map((p) => ({
     ...p,
+    // Every EVM row stays clickable when ANY ethereum provider exists —
+    // getEVMProvider falls back to window.ethereum for unknown wallets.
     installed:
-      p.id === "metamask" ? !!metamask
-      : p.id === "coinbase" ? !!coinbase
-      : p.id === "okx" ? !!okx
+      p.id === "metamask" ? hasEVM
+      : p.id === "coinbase" ? hasEVM
+      : p.id === "okx" ? hasEVM
+      : p.id === "generic" ? hasEVM
       : p.id === "phantom" ? !!phantom
       : true,
   }));
@@ -104,16 +110,16 @@ export function detectProviders(): AvailableProvider[] {
 export function getEVMProvider(id: WalletProviderId): EIP1193Provider | null {
   const w = windowOrNull();
   if (!w) return null;
+  const list = providerList();
+  const fallback = list[0] ?? (w.ethereum as EIP1193Provider | undefined) ?? null;
+  if (id === "generic") return fallback;
   if (id === "metamask") {
-    const list = providerList();
     const meta = list.find((p) => p.isMetaMask);
-    if (meta) return meta;
-    const e = w.ethereum as EIP1193Provider | undefined;
-    return e?.isMetaMask ? e : null;
+    return meta ?? fallback;
   }
-  if (id === "coinbase") return (w.coinbaseWalletExtension as EIP1193Provider) ?? null;
-  if (id === "okx") return (w.okxwallet as EIP1193Provider) ?? null;
-  return null;
+  if (id === "coinbase") return (w.coinbaseWalletExtension as EIP1193Provider) ?? fallback;
+  if (id === "okx") return (w.okxwallet as EIP1193Provider) ?? fallback;
+  return fallback;
 }
 
 export function getSolanaProvider(): SolanaProvider | null {

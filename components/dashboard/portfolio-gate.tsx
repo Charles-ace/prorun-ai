@@ -169,7 +169,7 @@ export function PortfolioGate({
               </div>
               <div className="flex items-center gap-2 text-xs text-ink-faint">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                Demo data mode — deterministic portfolio derived from address
+                Demo derivation — for real on-chain balances use <span className="font-semibold text-ink-muted">Connect Wallet</span> in the top bar
               </div>
               <button
                 onClick={loadWallet}

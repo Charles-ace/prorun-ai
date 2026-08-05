@@ -34,6 +34,7 @@ export const ASSET_CATALOG: AssetMeta[] = [
   { symbol: "UNI", name: "Uniswap", vol: "high", stable: false, seedPrice: 13.8, seedCap: 8.4e9, coingeckoId: "uniswap", color: "#ff007a" },
   { symbol: "ARB", name: "Arbitrum", vol: "high", stable: false, seedPrice: 0.812, seedCap: 3.2e9, coingeckoId: "arbitrum", color: "#28a0f0" },
   { symbol: "OP", name: "Optimism", vol: "high", stable: false, seedPrice: 2.06, seedCap: 2.7e9, coingeckoId: "optimism", color: "#ff0420" },
+  { symbol: "OKB", name: "OKB (OKX)", vol: "medium", stable: false, seedPrice: 62.4, seedCap: 1.5e10, coingeckoId: "okb", color: "#17b90f" },
   { symbol: "USDT", name: "Tether", vol: "low", stable: true, seedPrice: 1.0, seedCap: 1.4e11, coingeckoId: "tether", color: "#26a17b" },
   { symbol: "USDC", name: "USD Coin", vol: "low", stable: true, seedPrice: 1.0, seedCap: 5.6e10, coingeckoId: "usd-coin", color: "#2775ca" },
   { symbol: "DAI", name: "Dai", vol: "low", stable: true, seedPrice: 1.0, seedCap: 5.2e9, coingeckoId: "dai", color: "#f5ac37" },

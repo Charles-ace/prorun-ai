@@ -9,13 +9,17 @@ import {
   LayoutDashboard,
   LineChart,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  PanelRightOpen,
   ScrollText,
   Settings,
   Wallet,
-  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/format";
 import { motion } from "framer-motion";
+import { LogoMark } from "@/components/brand/logo-mark";
+import { WalletConnectButton } from "@/components/wallet/wallet-connect";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -29,10 +33,8 @@ const NAV = [
 
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-lime-300 shadow-glow">
-        <Zap size={20} className="text-[#06130d]" strokeWidth={2.6} />
-      </div>
+    <div className="flex items-center gap-2.5">
+      <LogoMark size={36} className={compact ? "scale-90" : ""} />
       {!compact && (
         <div className="leading-none">
           <span className="text-[15px] font-bold tracking-tight text-ink">
@@ -47,15 +49,28 @@ export function Logo({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function Sidebar({ open, onClose, mobile }: { open: boolean; onClose: () => void; mobile?: boolean }) {
+export function Sidebar({
+  open,
+  onClose,
+  mobile,
+  collapsed,
+  onToggleCollapse,
+}: {
+  open: boolean;
+  onClose: () => void;
+  mobile?: boolean;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
+  const isCollapsed = !mobile && !!collapsed;
 
   const content = (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center justify-between border-b border-white/[0.06] px-5">
+      <div className={cn("flex h-16 items-center border-b border-white/[0.06]", isCollapsed ? "justify-center px-0" : "justify-between px-5")}>
         <Link href="/">
-          <Logo />
+          {isCollapsed ? <LogoMark size={32} /> : <Logo />}
         </Link>
         {mobile && (
           <button onClick={onClose} className="text-ink-muted hover:text-ink" aria-label="Close">
@@ -64,7 +79,7 @@ export function Sidebar({ open, onClose, mobile }: { open: boolean; onClose: () 
         )}
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto scroll-slim px-3 py-4">
+      <nav className={cn("flex-1 space-y-1 overflow-y-auto scroll-slim py-4", isCollapsed ? "px-2" : "px-3")}>
         {NAV.map((item) => {
           const activeOnHref = item.exact
             ? pathname === item.href
@@ -76,8 +91,11 @@ export function Sidebar({ open, onClose, mobile }: { open: boolean; onClose: () 
                 router.push(item.href);
                 onClose();
               }}
+              title={item.label}
+              aria-label={item.label}
               className={cn(
-                "group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                "group relative flex w-full items-center rounded-xl text-sm font-medium transition-colors",
+                isCollapsed ? "justify-center py-2.5" : "gap-3 px-3 py-2.5",
                 activeOnHref ? "text-emerald-300" : "text-ink-muted hover:text-ink",
               )}
             >
@@ -88,25 +106,43 @@ export function Sidebar({ open, onClose, mobile }: { open: boolean; onClose: () 
                   transition={{ type: "spring", stiffness: 400, damping: 32 }}
                 />
               )}
-              <span className="relative z-10 flex items-center gap-3">
+              <span className={cn("relative z-10 flex items-center", !isCollapsed && "gap-3")}>
                 <item.icon size={18} strokeWidth={activeOnHref ? 2.3 : 1.8} />
-                {item.label}
+                {!isCollapsed && item.label}
               </span>
             </button>
           );
         })}
       </nav>
 
-      <div className="border-t border-white/[0.06] p-4">
-        <div className="glass flex items-center gap-3 p-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400/20 to-lime-400/10 text-emerald-300">
-            <BarChart3 size={16} />
+      <div className="border-t border-white/[0.06] p-3">
+        {isCollapsed ? (
+          <button
+            onClick={onToggleCollapse}
+            title="Expand sidebar"
+            className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-ink-muted transition hover:text-ink"
+          >
+            <PanelRightOpen size={16} />
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <div className="glass flex items-center gap-3 p-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-400/20 to-lime-400/10 text-emerald-300">
+                <BarChart3 size={16} />
+              </div>
+              <div className="leading-tight">
+                <p className="text-xs font-semibold text-ink">OKX.AI Hackathon</p>
+                <p className="text-[10px] text-ink-muted">Submission build · v1.0</p>
+              </div>
+            </div>
+            <button
+              onClick={onToggleCollapse}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 py-2 text-[11px] font-medium text-ink-muted transition hover:text-ink"
+            >
+              <PanelLeftClose size={14} /> Collapse
+            </button>
           </div>
-          <div className="leading-tight">
-            <p className="text-xs font-semibold text-ink">OKX.AI Hackathon</p>
-            <p className="text-[10px] text-ink-muted">Submission build · v1.0</p>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -114,13 +150,26 @@ export function Sidebar({ open, onClose, mobile }: { open: boolean; onClose: () 
   if (mobile) return content;
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] border-r border-white/[0.06] bg-[#07080c]/85 backdrop-blur-2xl lg:block">
+    <aside
+      className={cn(
+        "fixed inset-y-0 left-0 z-30 hidden border-r border-white/[0.06] bg-[#07080c]/85 backdrop-blur-2xl transition-[width] duration-300 lg:block",
+        isCollapsed ? "w-[76px]" : "w-[248px]",
+      )}
+    >
       {content}
     </aside>
   );
 }
 
-export function Topbar({ onMenu }: { onMenu: () => void }) {
+export function Topbar({
+  onMenu,
+  onToggleCollapse,
+  collapsed,
+}: {
+  onMenu: () => void;
+  onToggleCollapse?: () => void;
+  collapsed?: boolean;
+}) {
   const pathname = usePathname();
   const current = NAV.find((n) => (n.exact ? pathname === n.href : pathname.startsWith(n.href)));
   return (
@@ -133,6 +182,16 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
         >
           <Menu size={16} />
         </button>
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="hidden rounded-lg border border-white/10 p-2 text-ink-muted transition hover:border-emerald-400/30 hover:text-emerald-300 lg:block"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+          </button>
+        )}
         <div>
           <h1 className="text-base font-semibold tracking-tight text-ink">{current?.label ?? "Dashboard"}</h1>
           <p className="hidden text-xs text-ink-faint sm:block">
@@ -146,9 +205,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           <span className="hidden sm:inline">Markets</span>
           <span className="tabular text-emerald-300">live</span>
         </button>
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-lime-300 text-sm font-bold text-[#06130d]">
-          P
-        </div>
+        <WalletConnectButton />
       </div>
     </header>
   );

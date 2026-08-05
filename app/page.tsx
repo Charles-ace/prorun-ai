@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/dashboard/sidebar";
 import { RiskGauge } from "@/components/ui/risk-gauge";
+import { WalletConnectButton } from "@/components/wallet/wallet-connect";
 
 const features = [
   {
@@ -73,12 +74,7 @@ export default function LandingPage() {
           <a href="#assistant" className="transition hover:text-ink">AI Assistant</a>
         </nav>
         <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="hidden rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-medium text-ink-muted transition hover:text-ink sm:block"
-          >
-            Sign in
-          </Link>
+          <WalletConnectButton variant="ghost" />
           <Link
             href="/dashboard"
             className="rounded-xl bg-gradient-to-r from-emerald-400 to-lime-300 px-4 py-2 text-sm font-bold text-[#06130d] shadow-glow transition hover:brightness-110"

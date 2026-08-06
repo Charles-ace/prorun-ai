@@ -48,7 +48,7 @@ export interface LLMOptions {
   toolChoice?: "auto" | "none" | { type: "function"; function: { name: string } };
 }
 
-const DEFAULT_MODEL = "deepseek/deepseek-chat-v3-0324:free";
+const DEFAULT_MODEL = "openai/gpt-oss-20b:free";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 function getHeaders(): Record<string, string> {

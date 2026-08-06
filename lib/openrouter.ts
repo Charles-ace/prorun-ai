@@ -1,5 +1,5 @@
 // OpenRouter LLM client — uses fetch directly, no SDK needed.
-// Free models: meta-llama/llama-3.1-8b-instruct:free, mistralai/mistral-7b-instruct:free, google/gemma-2-9b-it:free
+// Free models: mistralai/mistral-7b-instruct:free, google/gemma-2-9b-it:free, meta-llama/llama-3.2-3b-instruct:free
 // Docs: https://openrouter.ai/docs
 
 export interface OpenRouterMessage {
@@ -48,7 +48,7 @@ export interface LLMOptions {
   toolChoice?: "auto" | "none" | { type: "function"; function: { name: string } };
 }
 
-const DEFAULT_MODEL = "meta-llama/llama-3.1-8b-instruct:free";
+const DEFAULT_MODEL = "mistralai/mistral-7b-instruct:free";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 function getHeaders(): Record<string, string> {

@@ -48,7 +48,7 @@ export interface LLMOptions {
   toolChoice?: "auto" | "none" | { type: "function"; function: { name: string } };
 }
 
-const DEFAULT_MODEL = "mistralai/mistral-7b-instruct:free";
+const DEFAULT_MODEL = "google/gemma-2-9b-it:free";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 function getHeaders(): Record<string, string> {

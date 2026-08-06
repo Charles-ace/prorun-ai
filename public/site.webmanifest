@@ -1,0 +1,27 @@
+{
+  "name": "Prorun AI",
+  "short_name": "Prorun AI",
+  "description": "Understand your crypto risk before the market does. AI-powered portfolio analysis and trading intelligence.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#06070b",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "lang": "en",
+  "dir": "ltr"
+}

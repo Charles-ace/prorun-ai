@@ -1,10 +1,11 @@
 // Agentic chat engine for the AI Assistant.
-// With AI_API_KEY configured the assistant uses REAL LLM tool-calling
+// With OPENROUTER_API_KEY configured the assistant uses REAL LLM tool-calling
 // (OpenAI-compatible tools param): it decides which tools to run, executes
 // them, and answers grounded in their output. Offline, the deterministic
 // router "calls" the same tools and formats answers from the results.
 import type { ChatContext, ChatMessage } from "@/lib/types";
 import { TOOLS, TOOL_MAP, runTool } from "@/lib/tools";
+import { callOpenRouter, type OpenRouterMessage } from "@/lib/openrouter";
 
 const DISCLAIMER = "Prorun AI provides analysis and education, not financial advice.";
 
@@ -26,7 +27,7 @@ export async function buildAssistantReply(
   ctx: ChatContext,
   history: ChatMessage[],
 ): Promise<AssistantResult> {
-  if (process.env.AI_API_KEY) {
+  if (process.env.OPENROUTER_API_KEY) {
     const llm = await agenticLLM(question, ctx, history);
     if (llm) return llm;
   }
@@ -35,52 +36,23 @@ export async function buildAssistantReply(
 
 // ---------- LLM path: real tool-calling ----------
 
-interface OpenAIMessage {
-  role: string;
-  content?: string;
-  tool_calls?: unknown[];
-  tool_call_id?: string;
-}
-
 async function chatCompletion(
-  messages: OpenAIMessage[],
+  messages: OpenRouterMessage[],
   tools?: unknown[],
 ): Promise<{
   content: string | null;
   toolCalls: { id: string; name: string; args: string }[] | null;
 } | null> {
   try {
-    const res = await fetch(
-      process.env.AI_API_URL || "https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${process.env.AI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: process.env.AI_MODEL || "gpt-4o-mini",
-          temperature: 0.5,
-          max_tokens: 900,
-          messages,
-          ...(tools ? { tools, tool_choice: "auto" } : {}),
-        }),
-      },
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    const msg = data?.choices?.[0]?.message;
-    if (!msg) return null;
-    const toolCalls: { id: string; name: string; args: string }[] | null =
-      Array.isArray(msg.tool_calls) && msg.tool_calls.length
-        ? msg.tool_calls.map((tc: { id?: string; function?: { name?: string; arguments?: string } }) => ({
-            id: tc.id ?? "",
-            name: tc.function?.name ?? "",
-            args: tc.function?.arguments ?? "{}",
-          }))
-        : null;
-    return { content: typeof msg.content === "string" ? msg.content : null, toolCalls };
-  } catch {
+    const result = await callOpenRouter(messages, { tools, toolChoice: tools ? "auto" : "none" });
+    const toolCalls = result.toolCalls?.map((tc) => ({
+      id: tc.id,
+      name: tc.function.name,
+      args: tc.function.arguments,
+    })) ?? null;
+    return { content: result.content, toolCalls };
+  } catch (err) {
+    console.error("Chat completion failed:", err);
     return null;
   }
 }
@@ -95,7 +67,7 @@ async function agenticLLM(
     function: { name: t.name, description: t.description, parameters: t.parameters },
   }));
 
-  const messages: OpenAIMessage[] = [
+  const messages: OpenRouterMessage[] = [
     {
       role: "system",
       content: `You are Prorun AI, a professional crypto risk assistant embedded in a portfolio dashboard.
@@ -115,7 +87,7 @@ Keep answers under 6 lines unless the user asks for detail. Always close with: $
     return { reply: first.content ?? "No answer generated.", toolCalls: [] };
   }
 
-  const toolMessages: OpenAIMessage[] = [];
+  const toolMessages: OpenRouterMessage[] = [];
   for (const tc of first.toolCalls) {
     let args: Record<string, unknown> = {};
     try {
@@ -127,7 +99,7 @@ Keep answers under 6 lines unless the user asks for detail. Always close with: $
     toolMessages.push({ role: "tool", tool_call_id: tc.id, content: output });
   }
 
-  const second = await chatCompletion([...messages, first as unknown as OpenAIMessage, ...toolMessages]);
+  const second = await chatCompletion([...messages, first as unknown as OpenRouterMessage, ...toolMessages]);
   return {
     reply: second?.content?.trim() || "I ran the analysis but could not summarize the results.",
     toolCalls,

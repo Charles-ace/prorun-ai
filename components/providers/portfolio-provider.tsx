@@ -23,6 +23,11 @@ import { buildMarketBriefFor, buildPerformanceCurve } from "@/lib/sample-data";
 import { uid } from "@/lib/format";
 import { useWallet } from "@/components/wallet/wallet-provider";
 
+interface WalletInfo {
+  address: string;
+  chainId: number;
+}
+
 interface PortfolioState {
   portfolio: Portfolio | null;
   riskReport: RiskReport | null;
@@ -99,8 +104,27 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [generatingMarket, setGeneratingMarket] = useState(false);
   const [generatingPsychology, setGeneratingPsychology] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
-  const { isConnected, address, chainId } = useWallet();
-  const walletInfo = isConnected && address && chainId ? { address, chainId } : null;
+  let walletInfo: WalletInfo | null = null;
+  try {
+    const { isConnected, address, chainId } = useWallet();
+    if (isConnected && address && chainId) {
+      walletInfo = { address, chainId };
+    }
+  } catch {
+    // WalletProvider not available (e.g., during static generation)
+    // Fall back to localStorage
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem("prorun.wallet.v1");
+        if (raw) {
+          const w = JSON.parse(raw) as { address?: string; chainId?: number };
+          if (w.address && w.chainId) walletInfo = { address: w.address, chainId: w.chainId };
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+  }
 
   useEffect(() => {
     if (portfolio) save(KEYS.portfolio, portfolio);

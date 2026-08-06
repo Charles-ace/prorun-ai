@@ -1,45 +1,18 @@
 // AI service layer.
-// If a compatible LLM endpoint is configured (AI_API_KEY), narrative fields
-// are generated with the model. Otherwise Prorun's deterministic analysis
-// engines (risk, market, psychology) produce the output so the product works
-// fully offline. Analysis is authoritative regardless of provider.
+// If OPENROUTER_API_KEY is configured, narrative fields are generated with the model.
+// Otherwise Prorun's deterministic analysis engines (risk, market, psychology) produce the output
+// so the product works fully offline. Analysis is authoritative regardless of provider.
 import type { Asset, MarketAssetQuote, Portfolio, Trade } from "@/lib/types";
 import { analyzePortfolio } from "@/lib/analysis-engine";
 import { analyzeTrading } from "@/lib/psychology";
 import { buildMarketBriefFor, buildPerformanceCurve } from "@/lib/sample-data";
 import { isoNow } from "@/lib/format";
+import { simpleCompletion } from "@/lib/openrouter";
 
 const DISCLAIMER = "Prorun AI provides analysis and education, not financial advice.";
 
-const AI_API_KEY = process.env.AI_API_KEY;
-const AI_URL = process.env.AI_API_URL || "https://api.openai.com/v1/chat/completions";
-const AI_MODEL = process.env.AI_MODEL || "gpt-4o-mini";
-
 async function callLLM(system: string, user: string): Promise<string | null> {
-  if (!AI_API_KEY) return null;
-  try {
-    const res = await fetch(AI_URL, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        authorization: `Bearer ${AI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: AI_MODEL,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        temperature: 0.4,
-        max_tokens: 700,
-      }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.choices?.[0]?.message?.content?.trim() || null;
-  } catch {
-    return null;
-  }
+  return simpleCompletion(system, user, { temperature: 0.4, maxTokens: 700 });
 }
 
 function nl2(x: string): string {

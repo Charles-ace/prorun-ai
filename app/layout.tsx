@@ -7,6 +7,12 @@ export const metadata: Metadata = {
   title: "Prorun AI — Crypto Risk Analyst",
   description:
     "Understand your crypto risk before the market does. AI-powered portfolio analysis and trading intelligence.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/apple-touch-icon.svg",
+  },
+  manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

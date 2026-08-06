@@ -88,6 +88,29 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       const accounts = (await ethereum.request({ method: "eth_requestAccounts", params: [] })) as string[];
       if (!accounts || accounts.length === 0) throw new Error("No accounts returned. Please approve the connection in your wallet.");
 
+      // Auto-switch to OKX X Layer (chain 196)
+      const targetChainId = "0xc4"; // 196 in hex
+      try {
+        await ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: targetChainId }] });
+      } catch (switchErr: unknown) {
+        const err = switchErr as { code?: number; message?: string };
+        if (err?.code === 4902) {
+          // Chain not added, add it
+          await ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId: targetChainId,
+              chainName: "OKX X Layer",
+              nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 },
+              rpcUrls: ["https://rpc.xlayer.tech"],
+              blockExplorerUrls: ["https://www.okx.com/explorer/xlayer"],
+            }],
+          });
+        } else if (err?.code !== 4001) {
+          console.warn("Could not switch to X Layer:", err?.message);
+        }
+      }
+
       const chainId = (await ethereum.request({ method: "eth_chainId", params: [] })) as string;
 
       setWallet({

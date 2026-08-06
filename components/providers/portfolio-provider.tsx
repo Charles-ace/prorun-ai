@@ -21,6 +21,7 @@ import { analyzePortfolio } from "@/lib/analysis-engine";
 import { analyzeTrading } from "@/lib/psychology";
 import { buildMarketBriefFor, buildPerformanceCurve } from "@/lib/sample-data";
 import { uid } from "@/lib/format";
+import { useWallet } from "@/components/wallet/wallet-provider";
 
 interface PortfolioState {
   portfolio: Portfolio | null;
@@ -98,19 +99,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [generatingMarket, setGeneratingMarket] = useState(false);
   const [generatingPsychology, setGeneratingPsychology] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [walletInfo] = useState<{ address: string; chainId: number } | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = window.localStorage.getItem("prorun.wallet.v1");
-      if (raw) {
-        const w = JSON.parse(raw) as { address?: string; chainId?: number };
-        return w.address && w.chainId ? { address: w.address, chainId: w.chainId } : null;
-      }
-    } catch {
-      /* ignore */
-    }
-    return null;
-  });
+  const { isConnected, address, chainId } = useWallet();
+  const walletInfo = isConnected && address && chainId ? { address, chainId } : null;
 
   useEffect(() => {
     if (portfolio) save(KEYS.portfolio, portfolio);

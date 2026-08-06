@@ -178,13 +178,14 @@ export async function buildPortfolio(
   ).then((arr) => arr.sort((a, b) => b.allocation - a.allocation));
 
   // Normalise allocations to exactly 100%.
+  const allocSum = assets.reduce((s, x) => s + x.allocation, 0) || 1;
+  let assigned = 0;
   assets.forEach((a, i) => {
     if (i === assets.length - 1) {
-      a.allocation = Math.round(
-        (a.allocation / assets.reduce((s, x) => s + x.allocation, 0)) * 1000,
-      ) / 10;
+      a.allocation = Math.max(0, Math.round((100 - assigned) * 10) / 10);
     } else {
-      a.allocation = Math.round((a.allocation / assets.reduce((s, x) => s + x.allocation, 0)) * 1000) / 10;
+      a.allocation = Math.round((a.allocation / allocSum) * 1000) / 10;
+      assigned += a.allocation;
     }
   });
 

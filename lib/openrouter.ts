@@ -4,7 +4,7 @@
 
 export interface OpenRouterMessage {
   role: "system" | "user" | "assistant" | "tool";
-  content?: string;
+  content?: string | null;
   tool_calls?: OpenRouterToolCall[];
   tool_call_id?: string;
 }

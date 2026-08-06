@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/dashboard/sidebar";
 import { LivePreview } from "@/components/hero/live-preview";
+import { WalletConnectButton } from "@/components/wallet/wallet-connect";
 
 const features = [
   {

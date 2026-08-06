@@ -27,3 +27,4 @@ server.log
 # Local data store (demo persistence)
 /data
 *.db
+.vercel

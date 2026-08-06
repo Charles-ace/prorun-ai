@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/format";
 import { motion } from "framer-motion";
 import { LogoMark } from "@/components/brand/logo-mark";
+import { WalletConnectButton } from "@/components/wallet/wallet-connect";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -199,6 +200,7 @@ export function Topbar({
         </div>
       </div>
       <div className="flex items-center gap-3">
+        <WalletConnectButton />
         <button className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-ink-muted hover:text-ink">
           <Activity size={14} className="text-emerald-400" />
           <span className="hidden sm:inline">Markets</span>

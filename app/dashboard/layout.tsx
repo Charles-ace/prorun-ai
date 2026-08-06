@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Sidebar, Topbar } from "@/components/dashboard/sidebar";
 import { DashboardLoadingGate } from "@/components/loading/loading-screen";
+import { WalletProvider } from "@/components/wallet/wallet-provider";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -34,7 +35,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className={collapsed ? "relative z-10 transition-[padding] duration-300 lg:pl-[76px]" : "relative z-10 transition-[padding] duration-300 lg:pl-[248px]"}>
         <Topbar onMenu={() => setMobileOpen(true)} onToggleCollapse={() => setCollapsed((c) => !c)} collapsed={collapsed} />
         <main className="mx-auto max-w-[1400px] px-5 py-6 lg:px-8 lg:py-8">
-          <DashboardLoadingGate>{children}</DashboardLoadingGate>
+          <WalletProvider>
+            <DashboardLoadingGate>{children}</DashboardLoadingGate>
+          </WalletProvider>
         </main>
       </div>
     </div>

@@ -77,21 +77,39 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
   const connect = useCallback(async () => {
     if (typeof window === "undefined") return;
-    const w = window as unknown as { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> } };
+    const w = window as unknown as { ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown>; isMetaMask?: boolean } };
     const ethereum = w.ethereum;
-    if (!ethereum) throw new Error("No wallet detected. Please install MetaMask.");
+    if (!ethereum) throw new Error("No wallet detected. Please install MetaMask or another Web3 wallet.");
+    if (!ethereum.isMetaMask) {
+      console.warn("Non-MetaMask wallet detected, attempting connection...");
+    }
 
-    const accounts = (await ethereum.request({ method: "eth_requestAccounts", params: [] })) as string[];
-    if (!accounts || accounts.length === 0) throw new Error("No accounts returned");
+    try {
+      const accounts = (await ethereum.request({ method: "eth_requestAccounts", params: [] })) as string[];
+      if (!accounts || accounts.length === 0) throw new Error("No accounts returned. Please approve the connection in your wallet.");
 
-    const chainId = (await ethereum.request({ method: "eth_chainId", params: [] })) as string;
+      const chainId = (await ethereum.request({ method: "eth_chainId", params: [] })) as string;
 
-    setWallet({
-      address: accounts[0],
-      chainId: Number(chainId),
-      providerId: "metamask",
-      connectedAt: new Date().toISOString(),
-    });
+      setWallet({
+        address: accounts[0],
+        chainId: Number(chainId),
+        providerId: ethereum.isMetaMask ? "metamask" : "other",
+        connectedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      if (err instanceof Error) {
+        if (err.message.includes("User rejected") || err.message.includes("user rejected") || err.message.includes("4001")) {
+          throw new Error("Connection rejected. Please approve the connection request in your wallet.");
+        }
+        if (err.message.includes("already pending") || err.message.includes("32602")) {
+          throw new Error("Connection already pending. Please check your wallet.");
+        }
+        if (err.message.includes("locked") || err.message.includes("Locked")) {
+          throw new Error("Wallet is locked. Please unlock your wallet and try again.");
+        }
+      }
+      throw err;
+    }
   }, []);
 
   const disconnect = useCallback(() => {

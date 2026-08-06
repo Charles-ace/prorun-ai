@@ -1,13 +1,21 @@
 "use client";
 
 import { useWallet } from "@/components/wallet/wallet-provider";
-import { Wallet } from "lucide-react";
-import { useState } from "react";
+import { Wallet, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export function WalletConnectButton() {
   const { isConnected, address, chainId, connect, disconnect } = useWallet();
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [walletInstalled, setWalletInstalled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const w = window as unknown as { ethereum?: { isMetaMask?: boolean } };
+      setWalletInstalled(!!w.ethereum);
+    }
+  }, []);
 
   const handleConnect = async () => {
     setConnecting(true);
@@ -34,6 +42,24 @@ export function WalletConnectButton() {
         >
           Disconnect
         </button>
+      </div>
+    );
+  }
+
+  if (!walletInstalled) {
+    return (
+      <div className="flex flex-col gap-2">
+        <a
+          href="https://metamask.io/download/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-medium text-ink-muted transition hover:border-emerald-400/30 hover:text-emerald-300"
+        >
+          <Wallet size={14} />
+          Install MetaMask
+          <ExternalLink size={10} />
+        </a>
+        <p className="text-[10px] text-ink-muted text-center">MetaMask required to connect wallet</p>
       </div>
     );
   }

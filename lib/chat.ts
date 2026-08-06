@@ -42,6 +42,7 @@ async function chatCompletion(
 ): Promise<{
   content: string | null;
   toolCalls: { id: string; name: string; args: string }[] | null;
+  rawMessage: OpenRouterMessage;
 } | null> {
   try {
     const result = await callOpenRouter(messages, { tools, toolChoice: tools ? "auto" : "none" });
@@ -50,7 +51,12 @@ async function chatCompletion(
       name: tc.function.name,
       args: tc.function.arguments,
     })) ?? null;
-    return { content: result.content, toolCalls };
+    const rawMessage: OpenRouterMessage = {
+      role: "assistant",
+      content: result.content,
+      ...(result.toolCalls ? { tool_calls: result.toolCalls } : {}),
+    };
+    return { content: result.content, toolCalls, rawMessage };
   } catch (err) {
     console.error("Chat completion failed:", err);
     return null;
@@ -99,7 +105,7 @@ Keep answers under 6 lines unless the user asks for detail. Always close with: $
     toolMessages.push({ role: "tool", tool_call_id: tc.id, content: output });
   }
 
-  const second = await chatCompletion([...messages, first as unknown as OpenRouterMessage, ...toolMessages]);
+  const second = await chatCompletion([...messages, first.rawMessage, ...toolMessages]);
   return {
     reply: second?.content?.trim() || "I ran the analysis but could not summarize the results.",
     toolCalls,

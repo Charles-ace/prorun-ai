@@ -10,7 +10,6 @@ import {
   YAxis,
 } from "recharts";
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/format";
 
 interface Props {
@@ -83,18 +82,16 @@ export function PerformanceArea({ data, height = 260 }: Props) {
               );
             }}
           />
-          <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke="#34d399"
-              strokeWidth={2}
-              fill="url(#perfFill)"
-              fillOpacity={1}
-              dot={false}
-              activeDot={{ r: 4, strokeWidth: 0, fill: "#34d399" }}
-            />
-          </motion.g>
+          <Area
+            type="monotone"
+            dataKey="value"
+            stroke="#34d399"
+            strokeWidth={2}
+            fill="url(#perfFill)"
+            fillOpacity={1}
+            dot={false}
+            activeDot={{ r: 4, strokeWidth: 0, fill: "#34d399" }}
+          />
         </AreaChart>
       </ResponsiveContainer>
     </div>

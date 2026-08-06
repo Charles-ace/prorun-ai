@@ -72,7 +72,7 @@ async function agenticLLM(
       role: "system",
       content: `You are Prorun AI, a professional crypto risk assistant embedded in a portfolio dashboard.
 You are an agent with tools. Run tools whenever the answer depends on the user's portfolio, risk report, market prices or their wallet — then answer strictly from the tool output. Never invent numbers.
-Portfolio context: value ${fmtUsd(ctx.portfolioValue)}, risk score ${ctx.riskScore}/100, stable % ${pct(ctx.stablePct)}, 24h change ${pct(ctx.portfolioChange24h)}, top holdings ${ctx.topAllocations.map((a) => `${a.symbol} ${pct(a.pct)}`).join(", ")}, market sentiment ${ctx.marketSentiment}, BTC ${ctx.btcTrend}, ETH ${ctx.ethTrend}${ctx.wallet ? `, wallet ${ctx.wallet.address} on chain ${ctx.wallet.chainId}` : ""}.
+Portfolio context: value ${fmtUsd(ctx.portfolioValue ?? 0)}, risk score ${ctx.riskScore ?? 0}/100, stable % ${pct(ctx.stablePct ?? 0)}, 24h change ${pct(ctx.portfolioChange24h ?? 0)}, top holdings ${(ctx.topAllocations ?? []).map((a) => `${a.symbol} ${pct(a.pct ?? 0)}`).join(", ")}, market sentiment ${ctx.marketSentiment ?? "unknown"}, BTC ${ctx.btcTrend ?? "unknown"}, ETH ${ctx.ethTrend ?? "unknown"}${ctx.wallet ? `, wallet ${ctx.wallet.address} on chain ${ctx.wallet.chainId}` : ""}.
 Keep answers under 6 lines unless the user asks for detail. Always close with: ${DISCLAIMER}`,
     },
     ...history.slice(-6).map((m) => ({ role: m.role, content: m.content })),

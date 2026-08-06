@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { BrainCircuit, CornerDownLeft, Sparkles, Wallet } from "lucide-react";
+import { BrainCircuit, Check, CornerDownLeft, Sparkles, Wallet } from "lucide-react";
 import { usePortfolio } from "@/components/providers/portfolio-provider";
 import { GlassCard } from "@/components/ui/glass-card";
 import { PortfolioGate } from "@/components/dashboard/portfolio-gate";
@@ -208,10 +208,35 @@ function Message({ msg, index }: { msg: ChatMessage; index: number }) {
         )}
       >
         {msg.content}
+        {!isUser && !!msg.toolCalls?.length && (
+          <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-white/[0.06] pt-2.5">
+            {msg.toolCalls.map((t) => (
+              <span
+                key={t}
+                className="flex items-center gap-1 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300"
+              >
+                <Check size={10} />
+                {toolLabel(t)}
+              </span>
+            ))}
+          </div>
+        )}
         <div className={cn("mt-1.5 text-[10px]", isUser ? "text-[#06130d]/60" : "text-ink-faint")}>
           {new Date(msg.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
         </div>
       </div>
     </motion.div>
   );
+}
+
+const TOOL_LABELS: Record<string, string> = {
+  get_portfolio_snapshot: "Read portfolio",
+  run_risk_analysis: "Ran risk engine",
+  get_market_quotes: "Fetched live quotes",
+  get_market_brief: "Checked market conditions",
+  scan_wallet_balances: "Scanned on-chain balances",
+};
+
+function toolLabel(name: string): string {
+  return TOOL_LABELS[name] ?? `Tool: ${name}`;
 }

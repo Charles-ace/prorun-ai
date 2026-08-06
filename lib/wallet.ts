@@ -1,15 +1,49 @@
-// Real wallet integration layer.
-// EVM wallets (MetaMask, Coinbase, OKX) connect through the injected
-// EIP-1193 provider; balances are read via eth_call / eth_getBalance routed
-// through the wallet itself — no API keys required. Solana connects through
-// Phantom and reads balances from a public RPC. A "Demo" provider remains as
-// an offline fallback for reviewers without wallets installed.
-//
-// OKX network support: X Layer (chain 196, OKB gas) is a first-class target —
-// WOKB / USDC / USDT are indexed and OKX Wallet connects straight onto X Layer.
+// On-chain data layer, built on viem.
+// Balances are read through the wallet's own connection (transport), so no
+// API keys are required and reads work on any supported chain — including
+// OKX X Layer (chain 196, OKB gas). Demo + Phantom fallbacks stay for
+// wallets that aren't EIP-1193 based.
+import type { Chain, PublicClient } from "viem";
+import { createPublicClient, defineChain, http } from "viem";
+import {
+  arbitrum,
+  avalanche,
+  base,
+  bsc,
+  gnosis,
+  mainnet,
+  optimism,
+  polygon,
+} from "viem/chains";
 import { ASSET_MAP } from "@/lib/market-data";
 
-export type WalletProviderId = "metamask" | "coinbase" | "okx" | "generic" | "phantom" | "demo";
+export const xlayer = defineChain({
+  id: 196,
+  name: "OKX X Layer",
+  nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc.xlayer.tech"] },
+    public: { http: ["https://rpc.xlayer.tech"] },
+  },
+  blockExplorers: {
+    default: { name: "OKX Explorer", url: "https://www.okx.com/explorer/xlayer" },
+  },
+  testnet: false,
+});
+
+export const SUPPORTED_CHAINS = [
+  mainnet,
+  xlayer,
+  arbitrum,
+  base,
+  optimism,
+  polygon,
+  bsc,
+  avalanche,
+  gnosis,
+] as const;
+
+export type WalletProviderId = "metamask" | "coinbase" | "rabby" | "okx" | "generic" | "phantom" | "demo";
 
 export interface WalletProviderMeta {
   id: WalletProviderId;
@@ -17,10 +51,6 @@ export interface WalletProviderMeta {
   type: "EVM" | "Solana" | "Demo";
   detail: string;
   color: string;
-}
-
-export interface AvailableProvider extends WalletProviderMeta {
-  installed: boolean;
 }
 
 export interface ConnectedWallet {
@@ -41,127 +71,18 @@ export interface EVMHoldingsResult {
 export const WALLET_PROVIDERS: WalletProviderMeta[] = [
   { id: "metamask", name: "MetaMask", type: "EVM", detail: "Injected provider", color: "#f6851b" },
   { id: "coinbase", name: "Coinbase Wallet", type: "EVM", detail: "Browser extension", color: "#1652f0" },
+  { id: "rabby", name: "Rabby Wallet", type: "EVM", detail: "Multi-chain browser wallet", color: "#8697ff" },
   { id: "okx", name: "OKX Wallet", type: "EVM", detail: "Connects on X Layer · OKB · chain 196", color: "#17b90f" },
   { id: "generic", name: "Any EVM Wallet", type: "EVM", detail: "window.ethereum — Rabby, Trust, Brave, etc.", color: "#a78bfa" },
   { id: "phantom", name: "Phantom", type: "Solana", detail: "Solana browser wallet", color: "#9945ff" },
   { id: "demo", name: "Demo Wallet", type: "Demo", detail: "Simulated — no wallet needed", color: "#34d399" },
 ];
 
-interface EIP1193Provider {
-  isMetaMask?: boolean;
-  isCoinbaseWallet?: boolean;
-  isOkxWallet?: boolean;
-  providers?: EIP1193Provider[];
-  request(args: { method: string; params?: unknown[] }): Promise<unknown>;
-  on?(event: string, listener: (...args: unknown[]) => void): void;
-}
-
-interface SolanaProvider {
-  isPhantom?: boolean;
-  publicKey?: { toBase58(): string };
-  connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: { toBase58(): string } }>;
-}
-
-type AnyWindow = Record<string, unknown>;
-
-function windowOrNull(): AnyWindow | null {
-  if (typeof window === "undefined") return null;
-  return window as unknown as AnyWindow;
-}
-
-function providerList(): EIP1193Provider[] {
-  const w = windowOrNull();
-  if (!w) return [];
-  const ethereum = w.ethereum as EIP1193Provider | undefined;
-  const providers = (ethereum as EIP1193Provider & { providers?: EIP1193Provider[] })?.providers;
-  if (Array.isArray(providers) && providers.length) return providers;
-  if (ethereum) return [ethereum];
-  return [];
-}
-
-export function detectProviders(): AvailableProvider[] {
-  const w = windowOrNull();
-  const list = providerList();
-  // Any injected ethereum object means an EVM wallet is present.
-  const hasEVM = list.length > 0 || !!w?.ethereum;
-  const metamask = list.find((p) => p.isMetaMask) ?? null;
-  const coinbase =
-    (w?.coinbaseWalletExtension as EIP1193Provider | undefined) ?? list.find((p) => p.isCoinbaseWallet) ?? null;
-  const okx =
-    (w?.okxwallet as EIP1193Provider | undefined) ?? list.find((p) => p.isOkxWallet) ?? null;
-  const solanaWindow = w?.solana as SolanaProvider | undefined;
-  const phantomWindow = (w?.phantom as { solana?: SolanaProvider } | undefined)?.solana;
-  const phantom = phantomWindow ?? solanaWindow ?? null;
-
-  return WALLET_PROVIDERS.map((p) => ({
-    ...p,
-    // Every EVM row stays clickable when ANY ethereum provider exists —
-    // getEVMProvider falls back to window.ethereum for unknown wallets.
-    installed:
-      p.id === "metamask" ? hasEVM
-      : p.id === "coinbase" ? hasEVM
-      : p.id === "okx" ? hasEVM
-      : p.id === "generic" ? hasEVM
-      : p.id === "phantom" ? !!phantom
-      : true,
-  }));
-}
-
-export function getEVMProvider(id: WalletProviderId): EIP1193Provider | null {
-  const w = windowOrNull();
-  if (!w) return null;
-  const list = providerList();
-  const fallback = list[0] ?? (w.ethereum as EIP1193Provider | undefined) ?? null;
-  if (id === "generic") return fallback;
-  if (id === "metamask") {
-    const meta = list.find((p) => p.isMetaMask);
-    return meta ?? fallback;
-  }
-  if (id === "coinbase") return (w.coinbaseWalletExtension as EIP1193Provider) ?? fallback;
-  if (id === "okx") return (w.okxwallet as EIP1193Provider) ?? fallback;
-  return fallback;
-}
-
-export function getSolanaProvider(): SolanaProvider | null {
-  const w = windowOrNull();
-  if (!w) return null;
-  const phantom = (w.phantom as { solana?: SolanaProvider } | undefined)?.solana;
-  return phantom ?? (w.solana as SolanaProvider | undefined) ?? null;
-}
-
-// ---- OKX X Layer network definition ----
-
 export const X_LAYER = {
   chainId: 196,
-  chainIdHex: "0xc4",
   name: "OKX X Layer",
-  rpc: "https://rpc.xlayer.tech",
-  explorer: "https://www.okx.com/explorer/xlayer",
   currency: "OKB",
 };
-
-/** Adds / switches the wallet to OKX X Layer. Best-effort; returns false if rejected. */
-export async function ensureXLayer(provider: EIP1193Provider): Promise<boolean> {
-  try {
-    await provider.request({
-      method: "wallet_addEthereumChain",
-      params: [
-        {
-          chainId: X_LAYER.chainIdHex,
-          chainName: X_LAYER.name,
-          nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 },
-          rpcUrls: [X_LAYER.rpc],
-          blockExplorerUrls: [X_LAYER.explorer],
-        },
-      ],
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// ---- On-chain balance reading ----
 
 const CHAIN_NAMES: Record<number, string> = {
   1: "Ethereum Mainnet",
@@ -171,6 +92,8 @@ const CHAIN_NAMES: Record<number, string> = {
   10: "Optimism",
   137: "Polygon",
   56: "BNB Chain",
+  43114: "Avalanche C-Chain",
+  100: "Gnosis",
 };
 
 const NATIVE_SYMBOL: Record<number, string> = {
@@ -181,14 +104,13 @@ const NATIVE_SYMBOL: Record<number, string> = {
   10: "ETH",
   137: "MATIC",
   56: "BNB",
+  43114: "AVAX",
+  100: "xDAI",
 };
 
 // ERC-20s Prorun can price (every symbol here exists in the analysis catalog).
 // Multiple contracts may map to one symbol (e.g. bridged + wrapped USDT).
-interface ERC20Meta {
-  addrs: string[];
-}
-const ERC20_TOKENS: Record<number, Record<string, ERC20Meta>> = {
+const ERC20_TOKENS: Record<number, Record<string, { addrs: string[] }>> = {
   1: {
     USDC: { addrs: ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"] },
     USDT: { addrs: ["0xdAC17F958D2ee523a2206206994597C13D831ec7"] },
@@ -198,7 +120,7 @@ const ERC20_TOKENS: Record<number, Record<string, ERC20Meta>> = {
     ETH: { addrs: ["0xC02aaA39b223FE8D0A0e4C504E27aD9083C756Cc2"] }, // WETH
   },
   196: {
-    // X Layer — addresses from the official okx/xlayer-tokenlist + OKLink explorer.
+    // X Layer — addresses from the official okx/xlayer-tokenlist + OKLink.
     OKB: { addrs: ["0xe538905cf8410324e03A5A23C1c177a474D59b2b"] }, // WOKB
     USDC: { addrs: ["0x74b7F16337b8972027F6196A17a631ac6DdE26d22"] },
     USDT: {
@@ -236,49 +158,40 @@ const ERC20_TOKENS: Record<number, Record<string, ERC20Meta>> = {
   },
 };
 
-const BALANCE_OF = "0x70a08231";
-const DECIMALS = "0x313ce567";
+const ERC20_ABI = [
+  {
+    stateMutability: "view",
+    type: "function",
+    name: "balanceOf",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    stateMutability: "view",
+    type: "function",
+    name: "decimals",
+    inputs: [],
+    outputs: [{ name: "", type: "uint8" }],
+  },
+] as const;
 
-function encodeAddress(address: string): string {
-  return address.toLowerCase().replace(/^0x/, "").padStart(64, "0");
+/** viem chain object for a chain id (used for server-side wallet scans). */
+export function chainForId(chainId: number) {
+  return SUPPORTED_CHAINS.find((c) => c.id === chainId) ?? xlayer;
 }
 
-async function evmCall(provider: EIP1193Provider, to: string, data: string): Promise<bigint> {
-  const res = await provider.request({
-    method: "eth_call",
-    params: [{ to, data }, "latest"],
-  });
-  return BigInt(String(res ?? "0x0"));
-}
-
-async function tokenDecimals(provider: EIP1193Provider, addr: string): Promise<number> {
-  try {
-    return Number(await evmCall(provider, addr, DECIMALS));
-  } catch {
-    return 18;
-  }
-}
-
-/** Reads native + supported ERC-20 balances through the wallet's provider. */
-export async function fetchEVMHoldings(
-  provider: EIP1193Provider,
+/** Reads native + supported ERC-20 balances through the given public client. */
+export async function readEVMHoldings(
+  client: PublicClient,
   address: string,
-  chainIdHex?: string,
+  chainId: number,
 ): Promise<EVMHoldingsResult> {
-  let chainId = 1;
-  try {
-    chainId = Number(chainIdHex ?? (await provider.request({ method: "eth_chainId" })));
-  } catch {
-    chainId = 1;
-  }
-
   const holdings: Record<string, number> = {};
 
   const nativeSymbol = NATIVE_SYMBOL[chainId];
   if (nativeSymbol && ASSET_MAP[nativeSymbol]) {
     try {
-      const res = await provider.request({ method: "eth_getBalance", params: [address, "latest"] });
-      const wei = BigInt(String(res ?? "0x0"));
+      const wei = await client.getBalance({ address: address as `0x${string}` });
       const amt = Number(wei) / 1e18;
       if (amt > 0.0001) holdings[nativeSymbol] = amt;
     } catch {
@@ -287,18 +200,26 @@ export async function fetchEVMHoldings(
   }
 
   const tokens = ERC20_TOKENS[chainId] ?? {};
-  const data = `${BALANCE_OF}${encodeAddress(address)}`;
-  const checks: Promise<[string, number] | null>[] = [];
+  const reads: Promise<[string, number] | null>[] = [];
 
   for (const [symbol, meta] of Object.entries(tokens)) {
     if (!ASSET_MAP[symbol]) continue;
     for (const addr of meta.addrs) {
-      checks.push(
+      reads.push(
         (async (): Promise<[string, number] | null> => {
           try {
             const [raw, decimals] = await Promise.all([
-              evmCall(provider, addr, data),
-              tokenDecimals(provider, addr),
+              client.readContract({
+                address: addr as `0x${string}`,
+                abi: ERC20_ABI,
+                functionName: "balanceOf",
+                args: [address as `0x${string}`],
+              }),
+              client.readContract({
+                address: addr as `0x${string}`,
+                abi: ERC20_ABI,
+                functionName: "decimals",
+              }),
             ]);
             const amount = Number(raw) / 10 ** decimals;
             return amount > 0 ? [symbol, amount] : null;
@@ -310,7 +231,7 @@ export async function fetchEVMHoldings(
     }
   }
 
-  const settled = await Promise.allSettled(checks);
+  const settled = await Promise.allSettled(reads);
   for (const s of settled) {
     if (s.status === "fulfilled" && s.value) {
       const [symbol, amount] = s.value;
@@ -321,16 +242,34 @@ export async function fetchEVMHoldings(
   return { holdings, chain: CHAIN_NAMES[chainId] ?? `Chain ${chainId}`, chainId };
 }
 
+/** Public client for a chain id using its public RPC (server-side scans). */
+export function publicClientForChain(chainId: number) {
+  return createPublicClient({ chain: chainForId(chainId) as Chain, transport: http() });
+}
+
 // ---- Solana (Phantom + public RPC) ----
 
 const SOLANA_RPC = "https://api.mainnet-beta.solana.com";
 
-const SPL_TOKENS: Record<string, { symbol: string; mint: string; decimals: number }> = {
-  USDC: { symbol: "USDC", mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", decimals: 6 },
-  USDT: { symbol: "USDT", mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", decimals: 6 },
+const SPL_TOKENS: Record<string, { symbol: string; mint: string }> = {
+  USDC: { symbol: "USDC", mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+  USDT: { symbol: "USDT", mint: "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB" },
 };
 
-async function solanaRpc(method: string, params: unknown[]): Promise<{ value?: unknown }> {
+interface SolanaProvider {
+  isPhantom?: boolean;
+  publicKey?: { toBase58(): string };
+  connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: { toBase58(): string } }>;
+}
+
+export function getSolanaProvider(): SolanaProvider | null {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as Record<string, unknown>;
+  const phantom = (w.phantom as { solana?: SolanaProvider } | undefined)?.solana;
+  return phantom ?? (w.solana as SolanaProvider | undefined) ?? null;
+}
+
+async function solanaRpc(method: string, params: unknown[]): Promise<unknown> {
   const res = await fetch(SOLANA_RPC, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -338,7 +277,7 @@ async function solanaRpc(method: string, params: unknown[]): Promise<{ value?: u
   });
   const data = (await res.json()) as { error?: { message?: string }; result?: unknown };
   if (data.error) throw new Error(data.error.message ?? "Solana RPC error");
-  return { value: data.result };
+  return data.result;
 }
 
 type ParsedTokenAccount = {
@@ -355,7 +294,7 @@ export async function fetchSolanaHoldings(address: string): Promise<EVMHoldingsR
   const holdings: Record<string, number> = {};
 
   try {
-    const lamports = (await solanaRpc("getBalance", [address])).value as { value?: number } | undefined;
+    const lamports = (await solanaRpc("getBalance", [address])) as { value?: number } | undefined;
     const sol = Number(lamports?.value ?? 0) / 1e9;
     if (sol > 0.001) holdings.SOL = sol;
   } catch {
@@ -367,7 +306,7 @@ export async function fetchSolanaHoldings(address: string): Promise<EVMHoldingsR
       address,
       { programId: "TokenkegQfeZyiNwAeECaP9yA80cDhTo31owtjvcKwgDC" },
       { encoding: "jsonParsed" },
-    ])).value as ParsedTokenAccount[] | undefined;
+    ])) as ParsedTokenAccount[] | undefined;
     for (const acc of accounts ?? []) {
       const info = acc.account?.data?.parsed?.info;
       if (!info) continue;

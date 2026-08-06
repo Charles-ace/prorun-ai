@@ -131,6 +131,7 @@ export interface ChatMessage {
   content: string;
   createdAt: string;
   suggestions?: string[];
+  toolCalls?: string[];
 }
 
 export interface ChatContext {
@@ -143,4 +144,6 @@ export interface ChatContext {
   btcTrend: string;
   ethTrend: string;
   reportSummary?: string;
+  portfolio?: Portfolio;
+  wallet?: { address: string; chainId: number };
 }

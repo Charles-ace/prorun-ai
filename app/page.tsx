@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/dashboard/sidebar";
 import { LivePreview } from "@/components/hero/live-preview";
-import { WalletConnectButton } from "@/components/wallet/wallet-connect";
 
 const features = [
   {
@@ -71,7 +70,6 @@ export default function LandingPage() {
           <a href="#assistant" className="transition hover:text-ink">AI Assistant</a>
         </nav>
         <div className="flex items-center gap-3">
-          <WalletConnectButton variant="ghost" />
           <Link
             href="/dashboard"
             className="rounded-xl bg-gradient-to-r from-emerald-400 to-lime-300 px-4 py-2 text-sm font-bold text-[#06130d] shadow-glow transition hover:brightness-110"

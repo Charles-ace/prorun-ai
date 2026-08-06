@@ -15,9 +15,13 @@ export async function POST(req: Request) {
     if (!question) {
       return NextResponse.json({ error: "question required" }, { status: 400 });
     }
-    const reply = await buildAssistantReply(question, context as ChatContext, history ?? []);
-    return NextResponse.json({ reply });
+    const { reply, toolCalls } = await buildAssistantReply(
+      question,
+      (context ?? {}) as ChatContext,
+      history ?? [],
+    );
+    return NextResponse.json({ reply, toolCalls });
   } catch {
-    return NextResponse.json({ reply: DISCLAIMER }, { status: 200 });
+    return NextResponse.json({ reply: DISCLAIMER, toolCalls: [] }, { status: 200 });
   }
 }

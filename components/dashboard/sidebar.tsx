@@ -19,7 +19,6 @@ import {
 import { cn } from "@/lib/format";
 import { motion } from "framer-motion";
 import { LogoMark } from "@/components/brand/logo-mark";
-import { WalletConnectButton } from "@/components/wallet/wallet-connect";
 
 const NAV = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -205,7 +204,6 @@ export function Topbar({
           <span className="hidden sm:inline">Markets</span>
           <span className="tabular text-emerald-300">live</span>
         </button>
-        <WalletConnectButton />
       </div>
     </header>
   );

@@ -98,6 +98,19 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [generatingMarket, setGeneratingMarket] = useState(false);
   const [generatingPsychology, setGeneratingPsychology] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [walletInfo] = useState<{ address: string; chainId: number } | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem("prorun.wallet.v1");
+      if (raw) {
+        const w = JSON.parse(raw) as { address?: string; chainId?: number };
+        return w.address && w.chainId ? { address: w.address, chainId: w.chainId } : null;
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
+  });
 
   useEffect(() => {
     if (portfolio) save(KEYS.portfolio, portfolio);
@@ -180,8 +193,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   }, [portfolio]);
 
   const contextPayload = useMemo(() => {
-    if (!portfolio)
-      return null;
+    if (!portfolio) return null;
     return {
       portfolioValue: portfolio.totalValue,
       riskScore: riskReport?.score ?? analyzePortfolio(portfolio).score,
@@ -192,8 +204,10 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       btcTrend: marketBrief?.btc.trend ?? "Neutral",
       ethTrend: marketBrief?.eth.trend ?? "Neutral",
       reportSummary: riskReport?.summary,
+      portfolio,
+      wallet: walletInfo,
     };
-  }, [portfolio, riskReport, marketBrief, portfolioChange24h]);
+  }, [portfolio, riskReport, marketBrief, portfolioChange24h, walletInfo]);
 
   const messagesFor = useCallback(
     (id: string) => conversations[id] ?? [],
@@ -220,7 +234,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         [conversationId]: [...(prev[conversationId] ?? []), userMsg],
       }));
       try {
-        const server = await post<{ reply: string }>("/api/chat", {
+        const server = await post<{ reply: string; toolCalls?: string[] }>("/api/chat", {
           question,
           context: contextPayload,
           history,
@@ -231,6 +245,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
           role: "assistant",
           content: reply,
           createdAt: new Date().toISOString(),
+          toolCalls: server?.toolCalls?.length ? server.toolCalls : undefined,
         };
         setConversations((prev) => ({
           ...prev,

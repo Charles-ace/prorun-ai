@@ -1,8 +1,6 @@
-"use client";
-
 import type { Metadata } from "next";
 import { PortfolioProvider } from "@/components/providers/portfolio-provider";
-import { WalletProvider } from "@/components/wallet/wallet-provider";
+import { WalletProviderWrapper } from "@/components/providers/wallet-provider-wrapper";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="scroll-slim bg-[#06070b]">
         <PortfolioProvider>
-          <WalletProvider>{children}</WalletProvider>
+          <WalletProviderWrapper>{children}</WalletProviderWrapper>
         </PortfolioProvider>
       </body>
     </html>
